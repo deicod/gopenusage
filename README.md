@@ -144,6 +144,35 @@ Main types:
 - `openusage.PluginOutput`
 - `openusage.MetricLine`
 
+Reusable API client:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    openusageclient "github.com/deicod/gopenusage/pkg/openusage/client"
+)
+
+func main() {
+    c, err := openusageclient.New(openusageclient.Options{
+        BaseURL: "http://127.0.0.1:8080",
+    })
+    if err != nil {
+        panic(err)
+    }
+
+    output, err := c.QueryOne(context.Background(), "copilot")
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Println(output.ProviderID, output.Plan)
+}
+```
+
 ## Provider Prerequisites
 
 - `copilot`: run `gh auth login`.
@@ -160,6 +189,7 @@ Main types:
 - `contrib/systemd/`: user-level systemd unit + setup instructions.
 - `internal/api/`: HTTP server handlers.
 - `pkg/openusage/`: reusable core package.
+- `pkg/openusage/client/`: reusable JSON API client package.
 - `pkg/openusage/plugins/*`: provider-specific implementations.
 - `openusage/plugins/*`: source plugin manifests/icons used for metadata.
 
