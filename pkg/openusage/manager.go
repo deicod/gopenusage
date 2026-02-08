@@ -2,7 +2,9 @@ package openusage
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 
@@ -28,6 +30,7 @@ type Manager struct {
 
 func NewManager(opts Options, plugins []Plugin) (*Manager, error) {
 	pluginsDir := opts.PluginsDir
+	pluginsDirExplicit := pluginsDir != ""
 	if pluginsDir == "" {
 		pluginsDir = filepath.Join("openusage", "plugins")
 	}
@@ -37,9 +40,17 @@ func NewManager(opts Options, plugins []Plugin) (*Manager, error) {
 		dataDir = pluginruntime.DefaultDataDir()
 	}
 
-	manifestMap, manifestOrder, err := LoadManifests(pluginsDir)
+	manifestMap := make(map[string]LoadedManifest)
+	manifestOrder := make([]string, 0)
+	loadedManifests, loadedOrder, err := LoadManifests(pluginsDir)
 	if err != nil {
-		return nil, fmt.Errorf("load manifests from %s: %w", pluginsDir, err)
+		// Manifests are optional when using defaults. Plugin implementations are Go-native.
+		if pluginsDirExplicit || !errors.Is(err, os.ErrNotExist) {
+			return nil, fmt.Errorf("load manifests from %s: %w", pluginsDir, err)
+		}
+	} else {
+		manifestMap = loadedManifests
+		manifestOrder = loadedOrder
 	}
 
 	pluginMap := make(map[string]Plugin, len(plugins))

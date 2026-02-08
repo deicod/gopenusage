@@ -57,7 +57,7 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 
 	serveCmd.Flags().StringVar(&serveAddr, "addr", defaultServeAddr(), "listen address (e.g. :8080 or unix:///path/to.sock)")
-	serveCmd.Flags().StringVar(&servePluginsDir, "plugins-dir", "openusage/plugins", "path to plugin manifests")
+	serveCmd.Flags().StringVar(&servePluginsDir, "plugins-dir", "", "path to plugin manifests (optional)")
 	serveCmd.Flags().StringVar(&serveDataDir, "data-dir", pluginruntime.DefaultDataDir(), "state directory for plugin data")
 }
 

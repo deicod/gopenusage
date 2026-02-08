@@ -68,7 +68,7 @@ go run . serve [flags]
 Flags:
 
 - `--addr` (default `unix://$XDG_RUNTIME_DIR/gopenusage/gopenusage.sock` with safe fallbacks)
-- `--plugins-dir` (default `openusage/plugins`)
+- `--plugins-dir` (optional path to plugin manifests/icons)
 - `--data-dir` (default `${XDG_CONFIG_HOME}/gopenusage`)
 
 ### `query`

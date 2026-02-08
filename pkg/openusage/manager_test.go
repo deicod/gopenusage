@@ -51,6 +51,70 @@ func TestManagerPluginIDsOrder(t *testing.T) {
 	}
 }
 
+func TestManagerExplicitMissingManifestDirectoryReturnsError(t *testing.T) {
+	t.Parallel()
+
+	manager, err := NewManager(Options{
+		PluginsDir: filepath.Join(t.TempDir(), "missing"),
+		DataDir:    t.TempDir(),
+	}, []Plugin{
+		stubPlugin{
+			id: "alpha",
+			fn: func(_ context.Context, _ *pluginruntime.Env) (QueryResult, error) {
+				return QueryResult{
+					Plan: "Pro",
+					Lines: []MetricLine{
+						NewTextLine("Status", "Active", TextLineOptions{}),
+					},
+				}, nil
+			},
+		},
+	})
+	if err == nil {
+		t.Fatalf("expected explicit missing plugins dir to fail")
+	}
+	if manager != nil {
+		t.Fatalf("expected nil manager on explicit missing plugins dir")
+	}
+}
+
+func TestManagerDefaultMissingManifestDirectoryIsOptional(t *testing.T) {
+	t.Parallel()
+
+	manager, err := NewManager(Options{
+		DataDir: t.TempDir(),
+	}, []Plugin{
+		stubPlugin{
+			id: "alpha",
+			fn: func(_ context.Context, _ *pluginruntime.Env) (QueryResult, error) {
+				return QueryResult{
+					Plan: "Pro",
+					Lines: []MetricLine{
+						NewTextLine("Status", "Active", TextLineOptions{}),
+					},
+				}, nil
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewManager error: %v", err)
+	}
+
+	out, err := manager.QueryOne(context.Background(), "alpha")
+	if err != nil {
+		t.Fatalf("QueryOne error: %v", err)
+	}
+	if out.ProviderID != "alpha" {
+		t.Fatalf("unexpected provider ID: %s", out.ProviderID)
+	}
+	if out.DisplayName != "alpha" {
+		t.Fatalf("unexpected display name: %s", out.DisplayName)
+	}
+	if out.Plan != "Pro" {
+		t.Fatalf("unexpected plan: %s", out.Plan)
+	}
+}
+
 func TestManagerQueryOneUsesManifestAndPluginResult(t *testing.T) {
 	t.Parallel()
 
