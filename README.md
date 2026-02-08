@@ -123,31 +123,46 @@ Returns one plugin output.
 
 ## Reusable Package Usage
 
+Manager example (`pkg/openusage`):
+
 ```go
 package main
 
 import (
-    "context"
-    "fmt"
+	"context"
+	"fmt"
+	"log"
+	"time"
 
-    "github.com/deicod/gopenusage/pkg/openusage"
-    "github.com/deicod/gopenusage/pkg/openusage/builtin"
+	"github.com/deicod/gopenusage/pkg/openusage"
+	"github.com/deicod/gopenusage/pkg/openusage/builtin"
 )
 
 func main() {
-    manager, err := openusage.NewManager(openusage.Options{
-        PluginsDir: "openusage/plugins",
-    }, builtin.Plugins())
-    if err != nil {
-        panic(err)
-    }
+	manager, err := openusage.NewManager(openusage.Options{
+		// Optional:
+		// PluginsDir: "/path/to/openusage/plugins",
+		// DataDir:    "/path/to/state",
+	}, builtin.Plugins())
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    out, err := manager.QueryOne(context.Background(), "copilot")
-    if err != nil {
-        panic(err)
-    }
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
-    fmt.Printf("%s: %s\n", out.ProviderID, out.Plan)
+	outputs, err := manager.QueryAll(ctx, nil) // nil = all plugins
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, out := range outputs {
+		if out.Error != "" {
+			fmt.Printf("%s: error: %s\n", out.ProviderID, out.Error)
+			continue
+		}
+		fmt.Printf("%s: plan=%s, lines=%d\n", out.ProviderID, out.Plan, len(out.Lines))
+	}
 }
 ```
 
@@ -157,35 +172,46 @@ Main types:
 - `openusage.PluginOutput`
 - `openusage.MetricLine`
 
-Reusable API client:
+Reusable API client example (`pkg/openusage/client`):
 
 ```go
 package main
 
 import (
-    "context"
-    "fmt"
+	"context"
+	"fmt"
+	"log"
+	"time"
 
-    openusageclient "github.com/deicod/gopenusage/pkg/openusage/client"
+	openusageclient "github.com/deicod/gopenusage/pkg/openusage/client"
 )
 
 func main() {
-    c, err := openusageclient.New(openusageclient.Options{
-        // Use BaseURL for TCP/HTTP(S) servers.
-        BaseURL: "http://127.0.0.1:8080",
-        // Or set SocketPath for Unix-socket transport.
-        // SocketPath: os.Getenv("XDG_RUNTIME_DIR") + "/gopenusage/gopenusage.sock",
-    })
-    if err != nil {
-        panic(err)
-    }
+	client, err := openusageclient.New(openusageclient.Options{
+		// TCP server:
+		BaseURL: "http://127.0.0.1:8080",
+		// Or Unix socket:
+		// SocketPath: "/run/user/1000/gopenusage/gopenusage.sock",
+		Timeout: 15 * time.Second,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    output, err := c.QueryOne(context.Background(), "copilot")
-    if err != nil {
-        panic(err)
-    }
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
-    fmt.Println(output.ProviderID, output.Plan)
+	one, err := client.QueryOne(ctx, "copilot")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("one: %s plan=%s\n", one.ProviderID, one.Plan)
+
+	selected, err := client.QueryPlugins(ctx, []string{"copilot", "codex"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("selected plugins: %d\n", len(selected))
 }
 ```
 
