@@ -39,12 +39,12 @@ func (p *Plugin) Query(ctx context.Context, _ *pluginruntime.Env) (openusage.Que
 		PortFlag:    "--extension_server_port",
 	})
 	if err != nil || discovery == nil {
-		return openusage.QueryResult{}, fmt.Errorf("Start Antigravity and try again.")
+		return openusage.QueryResult{}, fmt.Errorf("start antigravity and try again")
 	}
 
 	port, scheme, ok := p.findWorkingPort(ctx, discovery)
 	if !ok {
-		return openusage.QueryResult{}, fmt.Errorf("Start Antigravity and try again.")
+		return openusage.QueryResult{}, fmt.Errorf("start antigravity and try again")
 	}
 
 	metadata := map[string]any{
@@ -85,7 +85,7 @@ func (p *Plugin) Query(ctx context.Context, _ *pluginruntime.Env) (openusage.Que
 	}
 
 	if len(configs) == 0 {
-		return openusage.QueryResult{}, fmt.Errorf("No data from language server.")
+		return openusage.QueryResult{}, fmt.Errorf("no data from language server")
 	}
 
 	deduped := make(map[string]modelUsage)
@@ -134,7 +134,7 @@ func (p *Plugin) Query(ctx context.Context, _ *pluginruntime.Env) (openusage.Que
 	}
 
 	if len(lines) == 0 {
-		return openusage.QueryResult{}, fmt.Errorf("No usage data available.")
+		return openusage.QueryResult{}, fmt.Errorf("no usage data available")
 	}
 
 	return openusage.QueryResult{Plan: plan, Lines: lines}, nil

@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -63,7 +64,11 @@ func DoHTTPRequest(ctx context.Context, req HTTPRequest) (HTTPResponse, error) {
 	if err != nil {
 		return HTTPResponse{}, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			log.Printf("pluginruntime: close response body: %v", closeErr)
+		}
+	}()
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {

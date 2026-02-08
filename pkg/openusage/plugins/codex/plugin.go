@@ -38,7 +38,7 @@ func (p *Plugin) ID() string {
 func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.QueryResult, error) {
 	auth, authPath, ok := p.loadAuth()
 	if !ok {
-		return openusage.QueryResult{}, fmt.Errorf("Not logged in. Run `codex` to authenticate.")
+		return openusage.QueryResult{}, fmt.Errorf("not logged in; run `codex` to authenticate")
 	}
 
 	tokens, hasTokens := pluginruntime.GetMap(auth, "tokens")
@@ -65,9 +65,9 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 				response, reqErr := p.fetchUsage(ctx, useToken, accountID)
 				if reqErr != nil {
 					if didRefresh {
-						return pluginruntime.HTTPResponse{}, fmt.Errorf("Usage request failed after refresh. Try again.")
+						return pluginruntime.HTTPResponse{}, fmt.Errorf("usage request failed after refresh, try again")
 					}
-					return pluginruntime.HTTPResponse{}, fmt.Errorf("Usage request failed. Check your connection.")
+					return pluginruntime.HTTPResponse{}, fmt.Errorf("usage request failed, check your connection")
 				}
 				return response, nil
 			},
@@ -81,15 +81,15 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 		}
 
 		if pluginruntime.IsAuthStatus(resp.Status) {
-			return openusage.QueryResult{}, fmt.Errorf("Token expired. Run `codex` to log in again.")
+			return openusage.QueryResult{}, fmt.Errorf("token expired; run `codex` to log in again")
 		}
 		if resp.Status < 200 || resp.Status >= 300 {
-			return openusage.QueryResult{}, fmt.Errorf("Usage request failed (HTTP %d). Try again later.", resp.Status)
+			return openusage.QueryResult{}, fmt.Errorf("usage request failed (HTTP %d), try again later", resp.Status)
 		}
 
 		data, ok := pluginruntime.TryParseJSONMap(resp.Body)
 		if !ok {
-			return openusage.QueryResult{}, fmt.Errorf("Usage response invalid. Try again later.")
+			return openusage.QueryResult{}, fmt.Errorf("usage response invalid, try again later")
 		}
 
 		nowSec := float64(time.Now().Unix())
@@ -151,10 +151,10 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 	}
 
 	if key, ok := pluginruntime.GetString(auth, "OPENAI_API_KEY"); ok && strings.TrimSpace(key) != "" {
-		return openusage.QueryResult{}, fmt.Errorf("Usage not available for API key.")
+		return openusage.QueryResult{}, fmt.Errorf("usage not available for API key")
 	}
 
-	return openusage.QueryResult{}, fmt.Errorf("Not logged in. Run `codex` to authenticate.")
+	return openusage.QueryResult{}, fmt.Errorf("not logged in; run `codex` to authenticate")
 }
 
 func buildWindowLine(label string, used float64, resetsAt string, periodMs int64) openusage.MetricLine {
@@ -264,13 +264,13 @@ func (p *Plugin) refreshToken(ctx context.Context, env *pluginruntime.Env, auth 
 		}
 		switch code {
 		case "refresh_token_expired":
-			return "", fmt.Errorf("Session expired. Run `codex` to log in again.")
+			return "", fmt.Errorf("session expired; run `codex` to log in again")
 		case "refresh_token_reused":
-			return "", fmt.Errorf("Token conflict. Run `codex` to log in again.")
+			return "", fmt.Errorf("token conflict; run `codex` to log in again")
 		case "refresh_token_invalidated":
-			return "", fmt.Errorf("Token revoked. Run `codex` to log in again.")
+			return "", fmt.Errorf("token revoked; run `codex` to log in again")
 		default:
-			return "", fmt.Errorf("Token expired. Run `codex` to log in again.")
+			return "", fmt.Errorf("token expired; run `codex` to log in again")
 		}
 	}
 

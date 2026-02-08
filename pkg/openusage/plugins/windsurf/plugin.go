@@ -55,7 +55,7 @@ func (p *Plugin) Query(ctx context.Context, _ *pluginruntime.Env) (openusage.Que
 		}
 	}
 
-	return openusage.QueryResult{}, fmt.Errorf("Start Windsurf and try again.")
+	return openusage.QueryResult{}, fmt.Errorf("start windsurf and try again")
 }
 
 func (p *Plugin) probeVariant(ctx context.Context, v variant) *variantResult {

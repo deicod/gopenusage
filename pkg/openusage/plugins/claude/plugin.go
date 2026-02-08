@@ -43,12 +43,12 @@ func (p *Plugin) ID() string {
 func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.QueryResult, error) {
 	creds := p.loadCredentials(env)
 	if creds == nil {
-		return openusage.QueryResult{}, fmt.Errorf("Not logged in. Run `claude` to authenticate.")
+		return openusage.QueryResult{}, fmt.Errorf("not logged in; run `claude` to authenticate")
 	}
 
 	accessToken, ok := pluginruntime.GetString(creds.OAuth, "accessToken")
 	if !ok || strings.TrimSpace(accessToken) == "" {
-		return openusage.QueryResult{}, fmt.Errorf("Not logged in. Run `claude` to authenticate.")
+		return openusage.QueryResult{}, fmt.Errorf("not logged in; run `claude` to authenticate")
 	}
 
 	nowMs := time.Now().UnixMilli()
@@ -70,9 +70,9 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 			response, reqErr := p.fetchUsage(ctx, useToken)
 			if reqErr != nil {
 				if didRefresh {
-					return pluginruntime.HTTPResponse{}, fmt.Errorf("Usage request failed after refresh. Try again.")
+					return pluginruntime.HTTPResponse{}, fmt.Errorf("usage request failed after refresh, try again")
 				}
-				return pluginruntime.HTTPResponse{}, fmt.Errorf("Usage request failed. Check your connection.")
+				return pluginruntime.HTTPResponse{}, fmt.Errorf("usage request failed, check your connection")
 			}
 			return response, nil
 		},
@@ -86,15 +86,15 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 	}
 
 	if pluginruntime.IsAuthStatus(resp.Status) {
-		return openusage.QueryResult{}, fmt.Errorf("Token expired. Run `claude` to log in again.")
+		return openusage.QueryResult{}, fmt.Errorf("token expired; run `claude` to log in again")
 	}
 	if resp.Status < 200 || resp.Status >= 300 {
-		return openusage.QueryResult{}, fmt.Errorf("Usage request failed (HTTP %d). Try again later.", resp.Status)
+		return openusage.QueryResult{}, fmt.Errorf("usage request failed (HTTP %d), try again later", resp.Status)
 	}
 
 	data, ok := pluginruntime.TryParseJSONMap(resp.Body)
 	if !ok {
-		return openusage.QueryResult{}, fmt.Errorf("Usage response invalid. Try again later.")
+		return openusage.QueryResult{}, fmt.Errorf("usage response invalid, try again later")
 	}
 
 	plan := ""
@@ -256,9 +256,9 @@ func (p *Plugin) refreshToken(ctx context.Context, env *pluginruntime.Env, creds
 			}
 		}
 		if errorCode == "invalid_grant" {
-			return "", fmt.Errorf("Session expired. Run `claude` to log in again.")
+			return "", fmt.Errorf("session expired; run `claude` to log in again")
 		}
-		return "", fmt.Errorf("Token expired. Run `claude` to log in again.")
+		return "", fmt.Errorf("token expired; run `claude` to log in again")
 	}
 
 	if resp.Status < 200 || resp.Status >= 300 {

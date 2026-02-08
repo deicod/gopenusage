@@ -38,7 +38,7 @@ func (p *Plugin) ID() string {
 func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.QueryResult, error) {
 	cred := p.loadToken(env)
 	if cred == nil {
-		return openusage.QueryResult{}, fmt.Errorf("Not logged in. Run `gh auth login` first.")
+		return openusage.QueryResult{}, fmt.Errorf("not logged in; run `gh auth login` first")
 	}
 
 	token := cred.Token
@@ -46,7 +46,7 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 
 	resp, err := p.fetchUsage(ctx, token)
 	if err != nil {
-		return openusage.QueryResult{}, fmt.Errorf("Usage request failed. Check your connection.")
+		return openusage.QueryResult{}, fmt.Errorf("usage request failed, check your connection")
 	}
 
 	if pluginruntime.IsAuthStatus(resp.Status) {
@@ -57,7 +57,7 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 			if fallback != nil {
 				resp, err = p.fetchUsage(ctx, fallback.Token)
 				if err != nil {
-					return openusage.QueryResult{}, fmt.Errorf("Usage request failed. Check your connection.")
+					return openusage.QueryResult{}, fmt.Errorf("usage request failed, check your connection")
 				}
 				if resp.Status >= 200 && resp.Status < 300 {
 					p.saveToken(env, fallback.Token)
@@ -67,12 +67,12 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 			}
 		}
 		if pluginruntime.IsAuthStatus(resp.Status) {
-			return openusage.QueryResult{}, fmt.Errorf("Token invalid. Run `gh auth login` to re-authenticate.")
+			return openusage.QueryResult{}, fmt.Errorf("token invalid; run `gh auth login` to re-authenticate")
 		}
 	}
 
 	if resp.Status < 200 || resp.Status >= 300 {
-		return openusage.QueryResult{}, fmt.Errorf("Usage request failed (HTTP %d). Try again later.", resp.Status)
+		return openusage.QueryResult{}, fmt.Errorf("usage request failed (HTTP %d), try again later", resp.Status)
 	}
 
 	if source == "gh-cli" {
@@ -81,7 +81,7 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 
 	data, ok := pluginruntime.TryParseJSONMap(resp.Body)
 	if !ok {
-		return openusage.QueryResult{}, fmt.Errorf("Usage response invalid. Try again later.")
+		return openusage.QueryResult{}, fmt.Errorf("usage response invalid, try again later")
 	}
 
 	plan := ""

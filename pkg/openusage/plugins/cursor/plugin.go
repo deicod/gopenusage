@@ -38,7 +38,7 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 	refreshToken := p.readStateValue("cursorAuth/refreshToken")
 
 	if accessToken == "" && refreshToken == "" {
-		return openusage.QueryResult{}, fmt.Errorf("Not logged in. Sign in via Cursor app.")
+		return openusage.QueryResult{}, fmt.Errorf("not logged in; sign in via cursor app")
 	}
 
 	nowMs := time.Now().UnixMilli()
@@ -51,7 +51,7 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 		} else if refreshed != "" {
 			accessToken = refreshed
 		} else if accessToken == "" {
-			return openusage.QueryResult{}, fmt.Errorf("Not logged in. Sign in via Cursor app.")
+			return openusage.QueryResult{}, fmt.Errorf("not logged in; sign in via cursor app")
 		}
 	}
 
@@ -65,9 +65,9 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 			resp, reqErr := p.connectPost(ctx, usageURL, useToken)
 			if reqErr != nil {
 				if didRefresh {
-					return pluginruntime.HTTPResponse{}, fmt.Errorf("Usage request failed after refresh. Try again.")
+					return pluginruntime.HTTPResponse{}, fmt.Errorf("usage request failed after refresh, try again")
 				}
-				return pluginruntime.HTTPResponse{}, fmt.Errorf("Usage request failed. Check your connection.")
+				return pluginruntime.HTTPResponse{}, fmt.Errorf("usage request failed, check your connection")
 			}
 			return resp, nil
 		},
@@ -88,21 +88,21 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 	}
 
 	if pluginruntime.IsAuthStatus(usageResp.Status) {
-		return openusage.QueryResult{}, fmt.Errorf("Token expired. Sign in via Cursor app.")
+		return openusage.QueryResult{}, fmt.Errorf("token expired; sign in via cursor app")
 	}
 	if usageResp.Status < 200 || usageResp.Status >= 300 {
-		return openusage.QueryResult{}, fmt.Errorf("Usage request failed (HTTP %d). Try again later.", usageResp.Status)
+		return openusage.QueryResult{}, fmt.Errorf("usage request failed (HTTP %d), try again later", usageResp.Status)
 	}
 
 	usage, ok := pluginruntime.TryParseJSONMap(usageResp.Body)
 	if !ok {
-		return openusage.QueryResult{}, fmt.Errorf("Usage response invalid. Try again later.")
+		return openusage.QueryResult{}, fmt.Errorf("usage response invalid, try again later")
 	}
 
 	enabled, okEnabled := pluginruntime.GetBool(usage, "enabled")
 	planUsage, hasPlanUsage := pluginruntime.GetMap(usage, "planUsage")
 	if !okEnabled || !enabled || !hasPlanUsage {
-		return openusage.QueryResult{}, fmt.Errorf("No active Cursor subscription.")
+		return openusage.QueryResult{}, fmt.Errorf("no active cursor subscription")
 	}
 
 	planName := ""
@@ -123,7 +123,7 @@ func (p *Plugin) Query(ctx context.Context, env *pluginruntime.Env) (openusage.Q
 
 	limit, hasLimit := pluginruntime.GetNumber(planUsage, "limit")
 	if !hasLimit {
-		return openusage.QueryResult{}, fmt.Errorf("Plan usage limit missing from API response.")
+		return openusage.QueryResult{}, fmt.Errorf("plan usage limit missing from API response")
 	}
 
 	planUsed, hasPlanUsed := pluginruntime.GetNumber(planUsage, "totalSpend")
@@ -250,10 +250,10 @@ func (p *Plugin) refreshToken(ctx context.Context, env *pluginruntime.Env, refre
 	if resp.Status == 400 || resp.Status == 401 {
 		if data, ok := pluginruntime.TryParseJSONMap(resp.Body); ok {
 			if shouldLogout, ok := pluginruntime.GetBool(data, "shouldLogout"); ok && shouldLogout {
-				return "", fmt.Errorf("Session expired. Sign in via Cursor app.")
+				return "", fmt.Errorf("session expired; sign in via cursor app")
 			}
 		}
-		return "", fmt.Errorf("Token expired. Sign in via Cursor app.")
+		return "", fmt.Errorf("token expired; sign in via cursor app")
 	}
 
 	if resp.Status < 200 || resp.Status >= 300 {
@@ -265,7 +265,7 @@ func (p *Plugin) refreshToken(ctx context.Context, env *pluginruntime.Env, refre
 		return "", nil
 	}
 	if shouldLogout, ok := pluginruntime.GetBool(data, "shouldLogout"); ok && shouldLogout {
-		return "", fmt.Errorf("Session expired. Sign in via Cursor app.")
+		return "", fmt.Errorf("session expired; sign in via cursor app")
 	}
 	newAccessToken, ok := pluginruntime.GetString(data, "access_token")
 	if !ok || strings.TrimSpace(newAccessToken) == "" {
