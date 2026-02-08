@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -15,6 +18,7 @@ import (
 var (
 	queryBaseURL string
 	queryPlugin  string
+	querySocket  string
 	queryTimeout time.Duration
 )
 
@@ -28,12 +32,27 @@ var queryCmd = &cobra.Command{
 			pluginID = strings.TrimSpace(args[0])
 		}
 
-		targetURL, err := buildQueryURL(queryBaseURL, pluginID)
+		socketPath := resolveQuerySocketPath(cmd)
+		baseURL := queryBaseURL
+		if socketPath != "" && !cmd.Flags().Changed("url") {
+			baseURL = "http://unix"
+		}
+
+		targetURL, err := buildQueryURL(baseURL, pluginID)
 		if err != nil {
 			return err
 		}
 
 		client := &http.Client{Timeout: queryTimeout}
+		if socketPath != "" {
+			dialer := &net.Dialer{Timeout: queryTimeout}
+			client.Transport = &http.Transport{
+				DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+					return dialer.DialContext(ctx, "unix", socketPath)
+				},
+			}
+		}
+
 		req, err := http.NewRequest(http.MethodGet, targetURL, nil)
 		if err != nil {
 			return err
@@ -75,6 +94,7 @@ func init() {
 
 	queryCmd.Flags().StringVar(&queryBaseURL, "url", "http://127.0.0.1:8080", "base URL of the OpenUsage API service")
 	queryCmd.Flags().StringVar(&queryPlugin, "plugin", "", "plugin id to query")
+	queryCmd.Flags().StringVar(&querySocket, "socket", "", "unix socket path (auto-detected when --url is not set)")
 	queryCmd.Flags().DurationVar(&queryTimeout, "timeout", 15*time.Second, "request timeout")
 }
 
@@ -102,4 +122,24 @@ func buildQueryURL(baseURL, pluginID string) (string, error) {
 		u.Path = strings.TrimRight(u.Path, "/") + "/v1/usage/" + strings.TrimSpace(pluginID)
 	}
 	return u.String(), nil
+}
+
+func resolveQuerySocketPath(cmd *cobra.Command) string {
+	socketPath := strings.TrimSpace(querySocket)
+	if socketPath != "" {
+		return socketPath
+	}
+	if cmd.Flags().Changed("url") {
+		return ""
+	}
+
+	candidate := defaultSocketPath()
+	info, err := os.Stat(candidate)
+	if err != nil {
+		return ""
+	}
+	if info.Mode()&os.ModeSocket == 0 {
+		return ""
+	}
+	return candidate
 }

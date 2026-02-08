@@ -1,0 +1,17 @@
+[Unit]
+Description=gopenusage JSON API (user service)
+Documentation=https://github.com/deicod/gopenusage
+
+[Service]
+Type=simple
+# Update these paths if your install/repo locations differ.
+WorkingDirectory=%h/go/src/github.com/deicod/gopenusage
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/env gopenusage serve --addr unix://%t/gopenusage/gopenusage.sock
+Restart=on-failure
+RestartSec=2s
+RuntimeDirectory=gopenusage
+RuntimeDirectoryMode=0750
+
+[Install]
+WantedBy=default.target

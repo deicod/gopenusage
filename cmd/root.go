@@ -11,7 +11,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "copilot-usage",
+	Use:   "gopenusage",
 	Short: "Track AI coding subscriptions via CLI and JSON API",
 	Long:  "A Cobra CLI for querying OpenUsage-compatible providers, serving a JSON API, and querying that API from the terminal.",
 }

@@ -1,4 +1,4 @@
-module github.com/deicod/copilot-usage
+module github.com/deicod/gopenusage
 
 go 1.25.7
 

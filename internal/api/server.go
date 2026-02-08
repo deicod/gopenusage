@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/deicod/copilot-usage/pkg/openusage"
+	"github.com/deicod/gopenusage/pkg/openusage"
 )
 
 type Server struct {
