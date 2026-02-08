@@ -38,6 +38,12 @@ Query all plugins (auto-detects default Unix socket if present):
 go run . query
 ```
 
+Query one plugin over the default Unix socket:
+
+```bash
+go run . query antigravity
+```
+
 Or run over TCP:
 
 ```bash
@@ -45,7 +51,7 @@ go run . serve --addr 127.0.0.1:8080
 go run . query --url http://127.0.0.1:8080
 ```
 
-Query one plugin:
+Query one plugin over TCP:
 
 ```bash
 go run . query antigravity --url http://127.0.0.1:8080
@@ -67,7 +73,7 @@ go run . serve [flags]
 
 Flags:
 
-- `--addr` (default `unix://$XDG_RUNTIME_DIR/gopenusage/gopenusage.sock` with safe fallbacks)
+- `--addr` (default `unix://$XDG_RUNTIME_DIR/gopenusage/gopenusage.sock`; fallback: `/run/user/<uid>/gopenusage/gopenusage.sock` or `${TMPDIR}/gopenusage/gopenusage.sock`)
 - `--plugins-dir` (optional path to plugin manifests/icons)
 - `--data-dir` (default `${XDG_CONFIG_HOME}/gopenusage`)
 
@@ -81,10 +87,17 @@ go run . query [plugin-id] [flags]
 
 Flags:
 
-- `--url` (default `http://127.0.0.1:8080`)
+- `--url` (default `http://127.0.0.1:8080`; auto-detected socket is only used when `--url` is not explicitly set)
 - `--plugin` (alternative to positional plugin id)
-- `--socket` (optional unix socket path; auto-detected from `$XDG_RUNTIME_DIR/gopenusage/gopenusage.sock` when `--url` is not set)
+- `--socket` (optional unix socket path; when set, requests are sent over this socket)
 - `--timeout` (default `15s`)
+
+Socket precedence for `query`:
+
+1. If `--socket` is set, use that Unix socket.
+2. Else if `--url` is explicitly set, use URL over TCP/HTTP(S).
+3. Else auto-detect the default Unix socket path and use it if present.
+4. Else fall back to `--url` default (`http://127.0.0.1:8080`).
 
 ## JSON API
 
@@ -158,7 +171,10 @@ import (
 
 func main() {
     c, err := openusageclient.New(openusageclient.Options{
+        // Use BaseURL for TCP/HTTP(S) servers.
         BaseURL: "http://127.0.0.1:8080",
+        // Or set SocketPath for Unix-socket transport.
+        // SocketPath: os.Getenv("XDG_RUNTIME_DIR") + "/gopenusage/gopenusage.sock",
     })
     if err != nil {
         panic(err)
